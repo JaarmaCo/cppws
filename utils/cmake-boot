@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+cmake -G Ninja -B build -S . \
+  -DCMAKE_C_COMPILER=clang \
+  -DCMAKE_CXX_COMPILER=clang++ \
+  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_CXX_STANDARD=20 \
+  -DCMAKE_CXX_STANDARD_REQUIRED=ON

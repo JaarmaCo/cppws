@@ -1,0 +1,57 @@
+[
+  {
+    "name": "spdlog",
+    "url": "https://github.com/gabime/spdlog",
+    "tag": "v1.16.0"
+  },
+  {
+    "name": "glfw",
+    "url": "https://github.com/glfw/glfw",
+    "tag": "3.4"
+  },
+  {
+    "name": "glbinding",
+    "url": "https://github.com/cginternals/glbinding",
+    "tag": "v3.5.0"
+  },
+  {
+    "name": "vk-bootstrap",
+    "url": "https://github.com/charles-lunarg/vk-bootstrap",
+    "tag": "v1.4.329"
+  },
+  {
+    "name": "nlohmann-json",
+    "url": "https://github.com/nlohmann/json",
+    "tag": "v3.12.0"
+  },
+  {
+    "name": "googletest",
+    "url": "https://github.com/google/googletest.git",
+    "tag": "v1.17.0"
+  },
+  {
+    "name": "Catch2",
+    "url": "https://github.com/catchorg/Catch2.git",
+    "tag": "v2.13.7"
+  },
+  {
+    "name": "fmt",
+    "url": "https://github.com/fmtlib/fmt.git",
+    "tag": "10.0.0"
+  },
+  {
+    "name": "range-v3",
+    "url": "https://github.com/ericniebler/range-v3.git",
+    "tag": "0.13.0"
+  },
+  {
+    "name": "Boost",
+    "url": "https://github.com/boostorg/boost.git",
+    "tag": "boost-1.84.0"
+  },
+  {
+    "name": "IPC_Toolkit",
+    "url": "https://github.com/ipc-sim/ipc-toolkit.git",
+    "tag": "v1.3.1"
+  }
+]

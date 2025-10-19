@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+
+set -e
+shopt -s nullglob
+
+usage() {
+  echo "
+
+cmake-add-dependency
+
+  Add a FetchContent dependency to be installed by CMake.
+
+$1 <depname>
+  -u|--git-url <url-to-git>
+  -t|--git-tag <git-tag>
+  [--default <default-dep>]
+  -h|--help
+"
+}
+
+POSITIONAL_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+  -u | --git-url)
+    GIT_URL="$2"
+    shift
+    shift
+    ;;
+  -t | --git-tag)
+    GIT_TAG="GIT_TAG $2"
+    shift
+    shift
+    ;;
+  -h | --help)
+    usage $0
+    exit
+    ;;
+  --default)
+    DEFAULT_TARGET=$2
+    shift
+    shift
+    ;;
+  -* | --*)
+    echo "Unknown option $1"
+    exit 1
+    ;;
+  *)
+    POSITIONAL_ARGS+=("$1") # save positional arg
+    shift                   # past argument
+    ;;
+  esac
+done
+
+set -- "${POSITIONAL_ARGS[@]}"
+
+if [[ $DEFAULT_TARGET ]]; then
+  DEPNAME=${DEFAULT_TARGET}
+  DEP=$(jq ".[] | select(.name == \"$DEFAULT_TARGET\")" utils/cmake-add-dependency-defaults.json)
+  if ! [[ $GIT_URL ]]; then
+    GIT_URL=$(echo "$DEP" | jq -r '.url')
+  fi
+  if ! [[ $GIT_TAG ]]; then
+    GIT_TAG="GIT_TAG $(echo "$DEP" | jq -r '.tag')"
+  fi
+fi
+
+if ! [[ $DEPNAME ]]; then
+  DEPNAME=$1
+  shift
+fi
+
+if ! [[ $DEPNAME ]]; then
+  usage $0
+  exit 1
+fi
+
+if ! [[ $GIT_URL ]]; then
+  GIT_URL="https://github.com/${DEPNAME}/${DEPNAME}"
+fi
+
+mkdir -p cmake/fetch-content-dependencies
+
+echo "
+FetchContent_Declare(${DEPNAME}
+  GIT_REPOSITORY ${GIT_URL}
+  ${GIT_TAG}
+)
+
+FetchContent_MakeAvailable(${DEPNAME})
+
+" >"cmake/fetch-content-dependencies/${DEPNAME}.cmake"
+
+INCLUDES=(cmake/fetch-content-dependencies/*.cmake)
+
+for INCLUDE in ${INCLUDES[@]}; do
+  echo "include(${INCLUDE})"
+done >cmake/update-dependencies.cmake
+
+cmake -B build -S .
