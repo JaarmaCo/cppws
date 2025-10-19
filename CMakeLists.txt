@@ -23,7 +23,6 @@ target_link_libraries(cppws
     spdlog::spdlog_header_only
     nlohmann_json::nlohmann_json)
 
-add_executable(test test/test.cpp)
-
-target_link_libraries(test cppws)
+enable_testing()
+add_subdirectory(test)
 

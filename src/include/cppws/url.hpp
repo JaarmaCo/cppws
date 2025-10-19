@@ -87,7 +87,7 @@ struct url_decode_range {
 class url : std::string {
 public:
   static bool validate(const char *str, std::size_t len);
-  static url encode(const char *str, std::size_t len);
+  static std::string encode(const char *str, std::size_t len);
 
   url() = default;
   url(std::string &&str);
@@ -117,12 +117,9 @@ public:
   }
 
   url parent() const;
-  url root() const;
 
-  url operator/(const url &) const &;
-  url operator/(url &&) const &;
-  url &&operator/(const url &) &&;
-  url &&operator/(url &&) &&;
+  url operator/(std::string_view) const &;
+  url &&operator/(std::string_view) &&;
 
   std::strong_ordering operator<=>(const url &other) const noexcept {
     return static_cast<const std::string &>(*this) <=>
