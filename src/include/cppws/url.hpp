@@ -1,8 +1,13 @@
 #pragma once
 
 #include <compare>
+#include <format>
+#include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace cppws {
 
@@ -84,9 +89,32 @@ struct url_decode_range {
   url_decode_iterator end() const { return last; }
 };
 
-class url : std::string {
+struct url_authority {
+
+  std::string_view full;
+
+  std::string_view username;
+  std::string_view password;
+  std::string_view domain;
+  short port;
+};
+
+class bad_url : public std::runtime_error {
+  std::size_t off_;
+
 public:
-  static bool validate(const char *str, std::size_t len);
+  bad_url(std::size_t off, const std::string &message)
+      : std::runtime_error(
+            std::format("URL error at position {}: {}", off, message)),
+        off_(off) {}
+
+  explicit bad_url(std::size_t off) : bad_url(off, "Syntax error") {}
+
+  std::size_t location() const noexcept { return off_; }
+};
+
+class url {
+public:
   static std::string encode(const char *str, std::size_t len);
 
   url() = default;
@@ -95,21 +123,28 @@ public:
   url(const char *str);
   url(const char *str, std::size_t len);
 
-  const std::string &string() const & noexcept {
-    return static_cast<const std::string &>(*this);
+  std::string_view string_view() const noexcept { return full_; }
+
+  std::string_view scheme() const noexcept { return scheme_; }
+
+  const url_authority &authority() const noexcept { return auth_; }
+
+  const std::vector<std::string_view> &path() const noexcept { return path_; }
+
+  std::string_view path_str() const noexcept { return pathStr_; }
+
+  std::string_view fragment() const noexcept { return fragment_; }
+
+  std::optional<std::string_view> query(std::string_view key) const noexcept {
+    auto it = query_.find(key);
+    if (it != query_.end())
+      return std::optional(it->second);
+    return std::nullopt;
   }
 
-  std::string &string() & noexcept { return static_cast<std::string &>(*this); }
-
-  std::string &&string() && noexcept {
-    return std::move(static_cast<std::string &>(*this));
+  const std::vector<std::string_view> &query_params() const noexcept {
+    return queryParams_;
   }
-
-  std::string_view protocol() const;
-
-  std::string_view domain() const;
-
-  std::string_view path() const;
 
   url_decode_range decode() const {
     return {{data(), data() + length()},
@@ -118,12 +153,10 @@ public:
 
   url parent() const;
 
-  url operator/(std::string_view) const &;
-  url &&operator/(std::string_view) &&;
+  url operator/(std::string_view) const;
 
   std::strong_ordering operator<=>(const url &other) const noexcept {
-    return static_cast<const std::string &>(*this) <=>
-           static_cast<const std::string &>(other);
+    return full_ <=> other.full_;
   }
 
   bool operator==(const url &other) const noexcept {
@@ -150,18 +183,33 @@ public:
     return *this <=> other < 0;
   }
 
-  using std::string::begin;
-  using std::string::c_str;
-  using std::string::cbegin;
-  using std::string::cend;
-  using std::string::crbegin;
-  using std::string::crend;
-  using std::string::data;
-  using std::string::end;
-  using std::string::length;
-  using std::string::rbegin;
-  using std::string::rend;
-  using std::string::size;
+  auto begin() const noexcept { return full_.begin(); }
+  auto end() const noexcept { return full_.end(); }
+
+  const char *data() const noexcept { return full_.data(); }
+
+  std::size_t length() const noexcept { return full_.length(); }
+
+  std::size_t size() const noexcept { return length(); }
+
+private:
+  void decompose();
+  std::string_view decompose_scheme(std::string_view);
+  std::string_view decompose_authority(std::string_view);
+  std::string_view decompose_path(std::string_view);
+  std::string_view decompose_query(std::string_view);
+
+  std::shared_ptr<std::string> str_;
+
+  std::string_view full_;
+
+  std::string_view scheme_;
+  url_authority auth_;
+  std::string_view pathStr_;
+  std::vector<std::string_view> path_;
+  std::vector<std::string_view> queryParams_;
+  std::unordered_map<std::string_view, std::string_view> query_;
+  std::string_view fragment_;
 };
 
 namespace url_literals {
