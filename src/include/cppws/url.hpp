@@ -17,10 +17,10 @@ class url_decode_iterator {
   const char *end_;
 
 public:
-  url_decode_iterator(const char *start, const char *end)
+  constexpr url_decode_iterator(const char *start, const char *end)
       : ptr_(start), end_(end) {}
 
-  url_decode_iterator &operator++() {
+  constexpr url_decode_iterator &operator++() {
     if (ptr_ == end_)
       throw std::runtime_error("Iterator moved past end.");
     if (*ptr_ == '%') {
@@ -33,13 +33,13 @@ public:
     return *this;
   }
 
-  url_decode_iterator operator++(int) {
+  constexpr url_decode_iterator operator++(int) {
     auto cp = *this;
     ++*this;
     return cp;
   }
 
-  char operator*() {
+  constexpr char operator*() {
     if (*ptr_ == '%') {
 
       if (end_ - ptr_ < 3)
@@ -74,10 +74,10 @@ public:
     }
   }
 
-  bool operator==(const url_decode_iterator &other) const {
+  constexpr bool operator==(const url_decode_iterator &other) const {
     return ptr_ == other.ptr_;
   }
-  bool operator!=(const url_decode_iterator &other) const {
+  constexpr bool operator!=(const url_decode_iterator &other) const {
     return ptr_ != other.ptr_;
   }
 };
@@ -88,6 +88,12 @@ struct url_decode_range {
 
   url_decode_iterator begin() const { return first; }
   url_decode_iterator end() const { return last; }
+
+  static constexpr url_decode_range
+  from_string_view(std::string_view v) noexcept {
+    return {{v.data(), v.data() + v.length()},
+            {v.data() + v.length(), v.data() + v.length()}};
+  }
 };
 
 struct url_authority {
@@ -98,6 +104,18 @@ struct url_authority {
   std::string_view password;
   std::string_view domain;
   short port;
+
+  url_decode_range decoded_username() const noexcept {
+    return url_decode_range::from_string_view(username);
+  }
+
+  url_decode_range decoded_password() const noexcept {
+    return url_decode_range::from_string_view(password);
+  }
+
+  url_decode_range decoded_domain() const noexcept {
+    return url_decode_range::from_string_view(domain);
+  }
 };
 
 class bad_url : public std::runtime_error {
@@ -157,24 +175,54 @@ public:
 
   const std::vector<std::string_view> &path() const noexcept { return path_; }
 
+  std::vector<url_decode_range> decoded_path() const noexcept {
+    std::vector<url_decode_range> r;
+    for (std::string_view v : path()) {
+      r.push_back(url_decode_range::from_string_view(v));
+    }
+    return r;
+  }
+
   std::string_view path_str() const noexcept { return pathStr_; }
+
+  url_decode_range decoded_path_str() const noexcept {
+    return url_decode_range::from_string_view(path_str());
+  }
 
   std::string_view fragment() const noexcept { return fragment_; }
 
+  url_decode_range decoded_fragment() const noexcept {
+    return url_decode_range::from_string_view(fragment());
+  }
+
   std::optional<std::string_view> query(std::string_view key) const noexcept {
-    auto it = query_.find(key);
+    auto it = query_.find(decode(key));
     if (it != query_.end())
       return std::optional(it->second);
     return std::nullopt;
+  }
+
+  std::optional<url_decode_range>
+  decoded_query(std::string_view key) const noexcept {
+    auto opt = query(key);
+    return opt.has_value()
+               ? std::optional(url_decode_range::from_string_view(opt.value()))
+               : std::nullopt;
   }
 
   const std::vector<std::string_view> &query_params() const noexcept {
     return queryParams_;
   }
 
+  std::vector<url_decode_range> decoded_query_params() const noexcept {
+    std::vector<url_decode_range> r;
+    for (std::string_view p : query_params())
+      r.push_back(url_decode_range::from_string_view(p));
+    return r;
+  }
+
   url_decode_range decode() const {
-    return {{data(), data() + length()},
-            {data() + length(), data() + length()}};
+    return url_decode_range::from_string_view(full_);
   }
 
   url parent() const;
