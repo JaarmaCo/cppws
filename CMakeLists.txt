@@ -11,7 +11,8 @@ find_package(CURL REQUIRED)
 add_library(cppws
   src/cppws.cpp
   src/socket.cpp
-  src/url.cpp)
+  src/url.cpp
+  src/http_request.cpp)
 
 target_include_directories(cppws PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/src/include>
