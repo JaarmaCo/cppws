@@ -263,7 +263,7 @@ constexpr std::ostream &operator<<(std::ostream &stream,
                                    const http_resonse_line &line) {
 
   stream << "HTTP/" << (line.http_version / 100);
-  if (line.http_version % 10 != 0)
+  if (line.http_version % 100 != 0)
     stream << '.' << ((line.http_version % 100) / 10);
 
   stream << ' ' << line.status_code;

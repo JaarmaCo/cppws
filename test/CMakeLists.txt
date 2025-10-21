@@ -4,6 +4,11 @@ set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
 
 include(GoogleTest)
 
+add_executable(http_response http_response.cpp)
+target_link_libraries(http_response
+  PRIVATE
+    cppws)
+
 add_executable(url_test url_test.cpp)
 target_link_libraries(url_test
   PRIVATE
