@@ -8,11 +8,11 @@ std::string cppws::url::encode(const char *str, std::size_t length) {
 
   const auto cconv = [&out](char ch) {
     int lo = ch & 0x0F;
-    int hi = ch & 0xF0;
+    int hi = (ch & 0xF0) >> 4;
 
     out += '%';
-    out += (lo < 10 ? lo + '0' : lo + 'A');
-    out += (hi < 10 ? hi + '0' : hi + 'A');
+    out += (hi < 10 ? hi + '0' : (hi - 10) + 'A');
+    out += (lo < 10 ? lo + '0' : (lo - 10) + 'A');
   };
 
   for (std::size_t i = 0; i < length; ++i) {
@@ -51,6 +51,38 @@ std::string cppws::url::encode(const char *str, std::size_t length) {
     }
   }
   return out;
+}
+
+std::string cppws::url::decode(const char *str, std::size_t length) {
+  const auto toc = [](int c) -> int {
+    return (c >= '0' && c <= '9'
+                ? c - '0'
+                : (c >= 'a' && c <= 'f' ? c - 'a' + 10 : c - 'A' + 10)) &
+           0xF;
+  };
+  std::string res;
+  for (std::size_t i = 0; i < length; ++i) {
+    if (str[i] == '%') {
+      if (i + 2 >= length)
+        throw bad_url(i, "2 digits required after '%'.");
+
+      char lo = str[i + 1];
+      char hi = str[i + 2];
+
+      if (!std::isxdigit(lo))
+        throw bad_url(i + 1, "Expected a hexadecimal digit.");
+
+      if (!std::isxdigit(hi))
+        throw bad_url(i + 2, "Expected a hexadecimal digit.");
+
+      str += static_cast<char>(toc(lo) | (toc(hi) << 4));
+
+      i = i + 1;
+      continue;
+    }
+    res += str[i];
+  }
+  return res;
 }
 
 cppws::url::url(std::string &&str)
@@ -136,17 +168,17 @@ std::string_view cppws::url::decompose_authority(std::string_view contents) {
 
   std::size_t pos = auth.find('@');
   if (pos != std::string_view::npos) { // ...://username:[password]@...
-    std::string_view user = auth.substr(0, pos);
 
-    pos = auth.find(':');
+    std::string_view user = auth.substr(0, pos);
+    auth = auth.substr(pos + 1);
+
+    pos = user.find(':');
     if (pos == std::string_view::npos)
       throw bad_url(user.data() - full_.data(),
                     "Missing password section of user info in auth segment.");
 
     auth_.username = user.substr(0, pos);
     auth_.password = user.substr(pos + 1);
-
-    auth = auth.substr(pos + 1);
   }
 
   // ...domain[:port]
@@ -231,6 +263,9 @@ std::string_view cppws::url::decompose_query(std::string_view contents) {
   if (key.empty())
     throw bad_url(prev - full_.data(), "Expected '=' after query key.");
 
+  queryParams_.push_back(key);
+  query_.insert({key, {prev, ptr}});
+
   return {ptr, end};
 }
 
@@ -241,6 +276,7 @@ cppws::url cppws::url::parent() const {
 
   url c = *this;
   c.path_.pop_back();
+  c.pathStr_ = {c.path_.front().data(), &*c.path_.back().end()};
   return c;
 }
 

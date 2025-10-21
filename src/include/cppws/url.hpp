@@ -1,6 +1,7 @@
 #pragma once
 
 #include <compare>
+#include <cstring>
 #include <format>
 #include <memory>
 #include <optional>
@@ -116,6 +117,31 @@ public:
 class url {
 public:
   static std::string encode(const char *str, std::size_t len);
+  static std::string decode(const char *str, std::size_t len);
+
+  static inline std::string encode(const std::string &str) {
+    return encode(str.data(), str.length());
+  }
+
+  static inline std::string decode(const std::string &str) {
+    return decode(str.data(), str.length());
+  }
+
+  static inline std::string encode(std::string_view str) {
+    return encode(str.data(), str.length());
+  }
+
+  static inline std::string decode(std::string_view str) {
+    return decode(str.data(), str.length());
+  }
+
+  static inline std::string encode(const char *str) {
+    return encode(str, std::strlen(str));
+  }
+
+  static inline std::string decode(const char *str) {
+    return decode(str, std::strlen(str));
+  }
 
   url() = default;
   url(std::string &&str);
