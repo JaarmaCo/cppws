@@ -10,6 +10,10 @@ static void read_http_line(std::pmr::string &out, std::istream &stream) {
     c = stream.get();
     out.append(1, c);
   }
+  if (c == '\n' && pc == '\r') {
+    out.pop_back();
+    out.pop_back();
+  }
 }
 
 bool cppws::http_request::accept(http_request &out, std::istream &stream) {
@@ -30,15 +34,17 @@ bool cppws::http_request::accept(http_request &out, std::istream &stream) {
 
   out.requestUri_ = std::pmr::vector<std::pmr::string>{&out.buffer_};
   for (auto rng : std::string_view(save, str) | std::views::split('/')) {
+    if (rng.empty())
+      continue;
     out.requestUri_.push_back(
         std::pmr::string(rng.begin(), rng.end(), &out.buffer_));
   }
 
   std::string_view rest{str, line.data() + line.length()};
-  if (!rest.starts_with("HTTP/"))
+  if (!rest.starts_with(" HTTP/"))
     return false;
 
-  rest = rest.substr(5);
+  rest = rest.substr(6);
   if (!std::isdigit(rest.front()))
     return false;
 
@@ -50,6 +56,7 @@ bool cppws::http_request::accept(http_request &out, std::istream &stream) {
     if (!std::isdigit(rest.front()))
       return false;
     out.httpVersion_ += 10 * (rest.front() - '0');
+    rest = rest.substr(1);
   }
 
   if (!rest.empty())
