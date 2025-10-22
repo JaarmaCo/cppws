@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <memory_resource>
 #include <vector>
 
 #include <cppws/socket.hpp>
@@ -22,6 +23,8 @@ class basic_socket_streambuf : public std::streambuf {
   class socket socket_;
 
 public:
+  basic_socket_streambuf() = default;
+
   /**
    * \brief Constructs a new stream buffer.
    *
@@ -95,6 +98,8 @@ class basic_socket_iostream : public std::basic_iostream<Char, Traits> {
   basic_socket_streambuf<Char, Traits, Alloc> streambuf_;
 
 public:
+  basic_socket_iostream() = default;
+
   /**
    * \brief Constructs a new socket stream.
    * \param socket Socket to read/write
@@ -156,6 +161,8 @@ class basic_socket_istream : public std::basic_istream<Char, Traits> {
   basic_socket_streambuf<Char, Traits, Alloc> streambuf_;
 
 public:
+  basic_socket_istream() = default;
+
   /**
    * \brief Constructs a new socket stream.
    * \param socket Socket to read/write
@@ -217,6 +224,8 @@ class basic_socket_ostream : public std::basic_ostream<Char, Traits> {
   basic_socket_streambuf<Char, Traits, Alloc> streambuf_;
 
 public:
+  basic_socket_ostream() = default;
+
   /**
    * \brief Constructs a new socket stream.
    * \param socket Socket to read/write
@@ -269,6 +278,12 @@ public:
   basic_socket_ostream &operator=(const basic_socket_ostream &) = delete;
 };
 
+using socket_streambuf = basic_socket_streambuf<char>;
+using socket_wstreambuf = basic_socket_streambuf<wchar_t>;
+using socket_u8streambuf = basic_socket_streambuf<char8_t>;
+using socket_u16streambuf = basic_socket_streambuf<char16_t>;
+using socket_u32streambuf = basic_socket_streambuf<char32_t>;
+
 using socket_iostream = basic_socket_iostream<char>;
 using socket_istream = basic_socket_istream<char>;
 using socket_ostream = basic_socket_ostream<char>;
@@ -290,6 +305,22 @@ using socket_u32istream = basic_socket_istream<char32_t>;
 using socket_u32ostream = basic_socket_ostream<char32_t>;
 
 namespace pmr {
+
+using socket_streambuf =
+    basic_socket_streambuf<char, std::char_traits<char>,
+                           std::pmr::polymorphic_allocator<char>>;
+using socket_wstreambuf =
+    basic_socket_streambuf<wchar_t, std::char_traits<wchar_t>,
+                           std::pmr::polymorphic_allocator<wchar_t>>;
+using socket_u8streambuf =
+    basic_socket_streambuf<char8_t, std::char_traits<char8_t>,
+                           std::pmr::polymorphic_allocator<char8_t>>;
+using socket_u16streambuf =
+    basic_socket_streambuf<char16_t, std::char_traits<char16_t>,
+                           std::pmr::polymorphic_allocator<char16_t>>;
+using socket_u32streambuf =
+    basic_socket_streambuf<char32_t, std::char_traits<char32_t>,
+                           std::pmr::polymorphic_allocator<char32_t>>;
 
 using socket_iostream =
     basic_socket_iostream<char, std::char_traits<char>,

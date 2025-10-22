@@ -33,6 +33,8 @@ public:
 
   void close() noexcept;
 
+  operator bool() const noexcept { return fd_ >= 0; }
+
 private:
   int fd_ = -1;
   std::string host_;
@@ -79,6 +81,7 @@ public:
   using socket::close;
   using socket::host;
   using socket::port;
+  using socket::operator bool;
 };
 
 } // namespace cppws

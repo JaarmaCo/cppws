@@ -9,13 +9,16 @@
 
 #include <cppws/http_request.hpp>
 #include <cppws/socket.hpp>
+#include <cppws/socket_stream.hpp>
 
 namespace cppws {
+
+using namespace std::chrono_literals;
 
 /**
  * Context for handling requests
  */
-class request_manager;
+class request_manager {};
 
 /**
  * Maps URL endpoints to request handlers.
@@ -56,8 +59,9 @@ public:
    * \brief Accept a new connection on the given socket.
    *
    * \param socket Socket connection to accept.
+   * \return true if the socket was accepted.
    */
-  void accept(socket &&socket);
+  bool accept(socket &&socket);
 
   /**
    * \brief Signal to the processor that request handling is to stop.
@@ -79,8 +83,9 @@ public:
    * available.
    *
    * \param timeout Maximum amount of time to wait for.
+   * \return true if the processor is now idle, false if timed out.
    */
-  void wait_until_available(const std::chrono::milliseconds &timeout);
+  bool wait_until_available(const std::chrono::milliseconds &timeout = 500ms);
 
 private:
   void run();
@@ -93,7 +98,10 @@ private:
 
   std::mutex lock_;
   std::condition_variable availableCondition_;
-  socket connection_;
+  std::condition_variable newConnectionCondition_;
+
+  bool hasRequest_ = false;
+  pmr::socket_iostream stream_;
   http_request processedRequest_;
   std::thread::id runner_;
 
