@@ -140,3 +140,25 @@ the cluster that is not able to provide this _key_ when prompted can be assumed 
 This means that only _cells_ (processes and behaviours) that can prove their origin as one of the same organism will be allowed to work in the
 server environment. If a foreign entity is discovered, it will be marked for termination and then later on neutralized by immune cells.
 
+## Hormones
+
+Hormones in the context of this server architecture are data packets that influence the behaviour of cells. Hormones typically do not immediately
+determine cell behaviour. Cells will rather average over all received hormones, and will make their decisions based on how far weighted each type
+of hormone is.
+
+Hormones may be implemented using any data transfer mechanism, however, the more common and simple types will be implemented using POSIX _signals_.
+
+The most basic types of _hormones_ are so called "growth hormones". These are signals that influence how likely cells are to replicate, or die.
+If a large quantity of "growth hormones" are received, the receiving cell is likely to be duplicated. For every hormone there will typically also
+be a type of "anti-hormone" the presence of which regulate the influence of the regular hormone.
+
+### Hormone transfer
+
+Hormones can be released by any type of cell, but may only be received by cells that have an immediate relation with the emitting cell. This will
+typically mean that hormones are most often always sent mother-to-child or child-to-mother. Hormones are then distributed through the network by
+passing on received messages to the next cells.
+
+Each time a hormone is duplicated however, its effect strength will be decreased. This is to emulate dilution and to mitigate the power of any one
+cell in the cluster. Because signals have reduced strength when passed over a large number of nodes, it would take the collective decision of many
+cells to change the behaviour of the whole network.
+
